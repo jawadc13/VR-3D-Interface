@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VR World Builder</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#111;font-family:system-ui,sans-serif;color:#eee}
+  #toolbar{position:fixed;top:8px;left:8px;right:8px;display:flex;flex-wrap:wrap;gap:6px;z-index:10;pointer-events:none}
+  #toolbar button,#toolbar input{pointer-events:auto;background:#2a2f3a;color:#eee;border:1px solid #444;border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer}
+  #toolbar button:hover{background:#3a4150}
+  #toolbar input[type=color]{padding:0;width:36px;height:30px}
+  #help{position:fixed;bottom:64px;left:8px;font-size:12px;opacity:.7;max-width:640px;line-height:1.4}
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+<div id="toolbar">
+  <button data-add="box">Cube</button><button data-add="sphere">Sphere</button>
+  <button data-add="cylinder">Cylinder</button><button data-add="cone">Cone</button>
+  <button data-add="torus">Torus</button><button data-add="plane">Plane</button>
+  <button data-add="light">Light</button>
+  <input type="color" id="color" value="#4f8cff" title="Color">
+  <button data-mode="translate">Move (W)</button><button data-mode="rotate">Rotate (E)</button><button data-mode="scale">Scale (R)</button>
+  <button id="dup">Duplicate (D)</button><button id="del">Delete (Del)</button><button id="undo">Undo (Ctrl+Z)</button>
+  <button id="snap">Snap: on</button>
+  <button id="save">Save</button><button id="load">Load</button><button id="export">Export GLB</button>
+  <button id="import">Import JSON</button><button id="clear">Clear</button>
+</div>
+<div id="help">Desktop: click to select, drag gizmo, orbit with mouse. On Quest: press "Enter VR".
+Right trigger = grab / press buttons · Left grip while grabbing = two-hand scale · Right stick up/down while grabbing = push/pull, otherwise snap turn ·
+Left stick = fly · X = toggle tool palette · A = duplicate · B = delete · Y = undo</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
