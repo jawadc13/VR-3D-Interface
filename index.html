@@ -3,38 +3,82 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#15181f">
 <title>VR World Builder</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
 <style>
-  html,body{margin:0;height:100%;overflow:hidden;background:#111;font-family:system-ui,sans-serif;color:#eee}
-  #toolbar{position:fixed;top:8px;left:8px;right:8px;display:flex;flex-wrap:wrap;gap:6px;z-index:10;pointer-events:none}
-  #toolbar button,#toolbar input{pointer-events:auto;background:#2a2f3a;color:#eee;border:1px solid #444;border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer}
-  #toolbar button:hover{background:#3a4150}
-  #toolbar input[type=color]{padding:0;width:36px;height:30px}
-  #help{position:fixed;bottom:64px;left:8px;font-size:12px;opacity:.7;max-width:640px;line-height:1.4}
+  html,body{margin:0;height:100%;overflow:hidden;background:#111;font-family:system-ui,sans-serif;color:#eee;font-size:13px}
+  #toolbar{position:fixed;top:6px;left:6px;right:270px;display:flex;flex-wrap:wrap;gap:4px;z-index:10;pointer-events:none}
+  .grp{display:flex;gap:2px;background:#0008;padding:3px;border-radius:8px;pointer-events:auto}
+  button,select,input,textarea{background:#2a2f3a;color:#eee;border:1px solid #444;border-radius:5px;padding:5px 8px;font:inherit}
+  button{cursor:pointer} button:hover{background:#3a4150}
+  button.on{background:#c79a1e;color:#111;border-color:#c79a1e}
+  #play.on{background:#2e9e4f;border-color:#2e9e4f;color:#fff}
+  input[type=color]{padding:0;width:34px;height:28px}
+  #panel{position:fixed;top:6px;right:6px;width:250px;bottom:6px;background:#15181fe8;border-radius:8px;padding:10px;box-sizing:border-box;overflow:auto;z-index:10}
+  #panel h3{margin:4px 0 8px;font-size:14px} #panel label{display:block;margin:8px 0 3px;opacity:.75}
+  #panel select,#panel input:not([type=color]),#panel textarea{width:100%;box-sizing:border-box}
+  #panel textarea{height:150px;font-family:ui-monospace,monospace;font-size:12px}
+  #status{position:fixed;left:6px;bottom:130px;background:#000a;padding:6px 10px;border-radius:6px;max-width:55vw;display:none}
+  #help{position:fixed;left:6px;bottom:60px;font-size:11px;opacity:.7;max-width:calc(100vw - 460px);line-height:1.35}
+  @media (max-width:800px){#panel{display:none}#toolbar{right:6px}#help{display:none}}
 </style>
 <script type="importmap">
 { "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  "three": "./vendor/three/build/three.module.js",
+  "three-mesh-bvh": "./vendor/three-mesh-bvh.js",
+  "three-bvh-csg": "./vendor/three-bvh-csg.js",
+  "cannon-es": "./vendor/cannon-es.js",
+  "three/addons/": "./vendor/three/examples/jsm/"
 }}
 </script>
 </head>
 <body>
 <div id="toolbar">
-  <button data-add="box">Cube</button><button data-add="sphere">Sphere</button>
-  <button data-add="cylinder">Cylinder</button><button data-add="cone">Cone</button>
-  <button data-add="torus">Torus</button><button data-add="plane">Plane</button>
-  <button data-add="light">Light</button>
-  <input type="color" id="color" value="#4f8cff" title="Color">
-  <button data-mode="translate">Move (W)</button><button data-mode="rotate">Rotate (E)</button><button data-mode="scale">Scale (R)</button>
-  <button id="dup">Duplicate (D)</button><button id="del">Delete (Del)</button><button id="undo">Undo (Ctrl+Z)</button>
-  <button id="snap">Snap: on</button>
-  <button id="save">Save</button><button id="load">Load</button><button id="export">Export GLB</button>
-  <button id="import">Import JSON</button><button id="clear">Clear</button>
+  <div class="grp">
+    <button data-add="box">Cube</button><button data-add="sphere">Sphere</button><button data-add="cylinder">Cylinder</button>
+    <button data-add="cone">Cone</button><button data-add="torus">Torus</button><button data-add="plane">Plane</button>
+    <button data-add="light">Light</button><button data-add="terrain">Terrain</button><button id="importModel">Import model…</button>
+  </div>
+  <div class="grp">
+    <button data-tool="translate" title="W">Move</button><button data-tool="rotate" title="E">Rotate</button><button data-tool="scale" title="R">Scale</button>
+    <button data-tool="vertex" title="1">Vertices</button><button data-tool="face" title="2">Faces</button><button id="extrude" title="X">Extrude</button>
+  </div>
+  <div class="grp">
+    <button data-sculpt="raise">Raise</button><button data-sculpt="lower">Lower</button><button data-sculpt="smooth">Smooth</button><button data-sculpt="flatten">Flatten</button>
+  </div>
+  <div class="grp">
+    <button id="setB" title="Mark the selection as the second object for booleans">Set B</button>
+    <button data-bool="union">Union</button><button data-bool="subtract">Subtract</button><button data-bool="intersect">Intersect</button>
+  </div>
+  <div class="grp">
+    <button id="dup" title="D">Duplicate</button><button id="del" title="Del">Delete</button><button id="undo" title="Ctrl+Z">Undo</button><button id="snap" class="on">Snap</button>
+  </div>
+  <div class="grp"><button id="play" title="P">▶ Play</button></div>
+  <div class="grp">
+    <button id="saveFile">Save file</button><button id="openFile">Open file</button><button id="export">Export GLB</button><button id="clear">Clear</button>
+  </div>
 </div>
-<div id="help">Desktop: click to select, drag gizmo, orbit with mouse. On Quest: press "Enter VR".
-Right trigger = grab / press buttons · Left grip while grabbing = two-hand scale · Right stick up/down while grabbing = push/pull, otherwise snap turn ·
-Left stick = fly · X = toggle tool palette · A = duplicate · B = delete · Y = undo</div>
+
+<div id="panel">
+  <h3 id="selName">Nothing selected</h3>
+  <label>Color</label><input type="color" id="color" value="#4f8cff">
+  <label>Texture</label><select id="texture"></select>
+  <button id="uploadTex" style="margin-top:4px;width:100%">Use image as texture…</button>
+  <label>Physics (in Play mode)</label>
+  <select id="physics"><option value="none">None</option><option value="static">Static (solid, doesn't move)</option><option value="dynamic">Dynamic (falls, can be thrown)</option></select>
+  <label>Mass (kg)</label><input type="number" id="mass" min="0.01" step="0.1" value="1">
+  <label>Script (runs every frame in Play mode)</label>
+  <select id="preset"></select>
+  <textarea id="script" spellcheck="false" placeholder="// variables: obj, body, dt, time, state, THREE, scene, input"></textarea>
+  <button id="applyScript" style="margin-top:4px;width:100%">Apply script</button>
+</div>
+
+<div id="status"></div>
+<div id="help">Desktop: click to select · drag gizmo · orbit = left drag (right drag while sculpting) · W/E/R move/rotate/scale · 1/2 vertex/face edit · X extrude · D duplicate · Del delete · Ctrl+Z undo · P play.<br>
+On Quest press <b>Enter VR</b>. Controllers: right trigger = grab / use tool / press palette · X = palette · Y = undo · A = duplicate · B = delete · left stick = fly · right stick = up/down + snap turn · left grip while grabbing = scale.
+Hands: pinch = trigger, left-hand pinch = teleport.</div>
 <script type="module" src="src/main.js"></script>
 </body>
 </html>
